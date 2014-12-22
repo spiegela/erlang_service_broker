@@ -1,0 +1,2 @@
+-module(service_broker_binding_handler).
+-author('spiegela@gmail.com').

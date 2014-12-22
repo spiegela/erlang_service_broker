@@ -1,0 +1,13 @@
+{
+  "services": [{
+    "id": "9c3b67af-d80c-4e4c-89ee-f6181a3facad",
+    "name": "erlang service node",
+    "description": "An Erlang virtual machine node",
+    "bindable": true,
+    "plans": [{
+      "id": "961dffa6-1a80-466e-8928-080f5ff9f63f",
+      "name": "small",
+      "description": "An Erlang virtual machine capable of a 16 node network"
+    }]
+  }]
+}

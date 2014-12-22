@@ -1,0 +1,12 @@
+{application, service_broker,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { service_broker_app, []}},
+  {env, [{http_port, 8080}]}
+ ]}.
