@@ -6,7 +6,8 @@
 -export([create/1, create/2, create/3, create/4, delete/1, delete/2,
          refresh_instances/0, get/1]).
 
--include("service_agent.hrl").
+-include_lib("service_agent/include/service_agent.hrl").
+-include("service_broker.hrl").
 
 -define(DIST_PORT_START, 9100).
 -define(DIST_RANGE_SIZE, 16).

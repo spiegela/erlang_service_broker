@@ -7,6 +7,8 @@
 
 -export([put_json/2]).
 
+-include("service_broker.hrl").
+
 -record(state, { instance_id :: string(),
                  binding_id  :: string(),
                  body :: #broker_binding{}

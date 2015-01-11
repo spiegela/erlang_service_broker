@@ -2,6 +2,9 @@
 
 -export([init/0, insert/2, delete/2]).
 
+-include_lib("service_agent/include/service_agent.hrl").
+-include("service_broker.hrl").
+
 -type storable_type() :: broker_instance | broker_binding.
 -type storable()      :: #broker_instance{} | #broker_binding{}.
 
