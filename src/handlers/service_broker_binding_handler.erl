@@ -14,6 +14,9 @@
                  body :: #broker_binding{}
                } ).
 
+-define(USERNAME, <<"admin">>).
+-define(PASSWORD, <<"password">>).
+
 %%% Cowboy REST Handler Callbacks
 
 init(Req, Opts) ->
@@ -26,17 +29,22 @@ init(Req, Opts) ->
       InstId2 = list_to_atom(binary_to_list(InstId)),
       BindId  = cowboy_req:binding(Req, binding_id),
       BindId2 = list_to_atom(binary_to_list(BindId)),
-	  {cowboy_rest, Req1, #state{instance_id = InstId2, binding_id = BindId2}}.
+	    {cowboy_rest, Req1, #state{instance_id = InstId2, binding_id = BindId2}};
     _ ->
       Req2 = cowboy_req:reply(412, Req),  % Unsupported version return 412
       {halt, Req2, undefined}
   end.
 
 is_authorized(Req, State) ->
+  AuthFailure = {false, "Basic realm=\"Authenticated\""},
   case cowboy_req:header(<<"Authentication">>, Req) of
-  	undefined  ->
-      {{false, "Basic realm=\"Authenticated\""}, Req1, State}.
-  	AuthString ->
+    undefined  ->
+      {AuthFailure, Req, State};
+    _AuthString ->
+      case cowboy_req:parse_header(<<"Authentication">>, Req) of
+        {?USERNAME, ?PASSWORD} -> true;
+        _                      -> {AuthFailure, Req, State}
+      end
   end.
 
 allowed_methods(Req, State) -> {[<<"PUT">>, <<"DELETE">>], Req, State}.
