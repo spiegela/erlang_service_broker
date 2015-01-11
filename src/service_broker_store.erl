@@ -10,7 +10,7 @@
 
 -spec init() -> ok.
 init() ->
-  case is_fresh_start() of
+  case is_fresh_startup() of
   	true             -> create_schema();
   	{exists, Tables} -> mnesia:wait_for_tables(Tables, 1000000)
   end.
