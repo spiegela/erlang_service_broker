@@ -1,16 +1,7 @@
 -type service_instance_list()  :: [service_instance_input()].
 -type service_binding_list()   :: [service_binding_input()].
--type service_instance_input() :: {  <<"plan_id">> |
-                                       <<"service_id">> |
-                                       <<"organization_guid">> |
-                                       <<"space_guid">>,
-                                     binary()
-  							                  }.
--type service_binding_input() :: {  <<"plan_id">> |
-                                       <<"service_id">> |
-                                       <<"app_guid">>,
-                                     binary()
-                                  }.
+-type service_instance_input() :: { binary(), binary() }.
+-type service_binding_input() :: { binary(), binary() }.
 -type service_instance_field() :: instance_id | plan_id | org_guid | space_guid.
 -type service_binding_field()  :: instance_id | plan_id | app_guid.
 -type errors() :: iolist().
