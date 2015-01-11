@@ -22,9 +22,9 @@ init(Req, Opts) ->
   Req1 = cowboy_req:set_resp_body(Req, "{}"),
   case cowboy_req:header(<<"X-Broker-Api-Version">>, Req) of
   	<<"2.4">> ->
-      InstId  = cowboy_req:binding(Req, :instance_id),
+      InstId  = cowboy_req:binding(Req, instance_id),
       InstId2 = list_to_atom(binary_to_list(InstId)),
-      BindId  = cowboy_req:binding(Req, :binding_id),
+      BindId  = cowboy_req:binding(Req, binding_id),
       BindId2 = list_to_atom(binary_to_list(BindId)),
 	  {cowboy_rest, Req1, #state{instance_id = InstId2, binding_id = BindId2}}.
     _ ->
