@@ -2,7 +2,6 @@
 %%% @doc Main Entry point for Service Broker.
 %%% @see http://github.com/spiegela/erlang-boshrelease
 %%% @end
-
 -module(service_broker_app).
 -author('spiegela@gmail.com').
 
@@ -48,13 +47,28 @@ port() ->
       list_to_integer(Other)
   end.
 
+setup_tables() ->
+  % Initialize ETS table with agent hosted instances
+  service_agent_proxy:refresh_instances(),
+  % Initialize Mnesia Database
+  service_broker_store:init().
+
 routes() ->
   [
     {'_',
       [
-        { "/v2/catalog", cowboy_static, {priv_file, service_broker, "catalog.json"} },
-        { "/v2/service_instances/:id", service_broker_instance_handler, [] },
-        { "/v2/service_bindings/:id", servirce_broker_binding_handler, [] }
+        { "/v2/catalog",
+          cowboy_static,
+          { priv_file, service_broker, "catalog.json"}
+        },
+        { "/v2/service_instances/:instance_id",
+          service_broker_instance_handler,
+          []
+        },
+        { "/v2/service_instances/:instance_id/service_bindings/:binding_id",
+          servirce_broker_binding_handler,
+          []
+        }
       ]
     }
   ].
