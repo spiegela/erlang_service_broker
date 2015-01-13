@@ -22,11 +22,11 @@ start_link() ->
 
 -spec register(agent()) -> ok.
 register(Address) ->
-  gen_server:call(?SERVER, {register, Address}).
+  gen_server:cast(?SERVER, {register, Address}).
 
 -spec deregister(agent()) -> ok.
 deregister(Address) ->
-  gen_server:call(?SERVER, {deregister, Address}).
+  gen_server:cast(?SERVER, {deregister, Address}).
 
 -spec list() -> [agent()].
 list() ->
