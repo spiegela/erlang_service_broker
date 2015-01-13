@@ -1,3 +1,4 @@
+-type agent() :: atom().
 -type service_instance_list()  :: [service_instance_input()].
 -type service_binding_list()   :: [service_binding_input()].
 -type service_instance_input() :: { binary(), binary() }.

@@ -130,8 +130,7 @@ query_instances(Agent) ->
   [{Agent, Inst} || Inst <- rpc:call(Agent, service_agent, list, [])].
 
 -spec agents() -> [agent()].
-agents() ->
-  [host_to_agent(A) || A <- string:tokens(os:getenv("AGENTS"), ",") ].
+agents() -> service_agent_registry:list().
 
 -spec host_to_agent(string()) -> agent().
 host_to_agent(Host) -> list_to_atom("service_agent@" ++ Host).
