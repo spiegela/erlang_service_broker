@@ -2,6 +2,8 @@
 
 -behaviour(gen_server).
 
+-include("service_broker.hrl").
+
 %% API
 -export([start_link/0, register/1, deregister/1, list/0]).
 
@@ -11,7 +13,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {agents = sets:new() :: set(agent())}).
+-record(state, {agents = sets:new() :: sets:set(agent())}).
 
 %%% API
 
@@ -35,14 +37,14 @@ list() ->
 init([]) ->
   {ok, #state{}}.
 
-handle_call(list, _From, #{agents = Agents}=State) ->
+handle_call(list, _From, #state{agents = Agents}=State) ->
   {reply, sets:to_list(Agents), State}.
 
 handle_cast(stop, State) ->
   {stop, normal, State};
-handle_cast({register, Address, #state{agents = Agents}=State) ->
+handle_cast({register, Addr}, #state{agents = Agents}=State) ->
   {noreply, State#state{agents = sets:add_element(Addr, Agents)}};
-handle_cast({deregister, Address, #state{agents = Agents}=State) ->
+handle_cast({deregister, Addr}, #state{agents = Agents}=State) ->
   {noreply, State#state{agents = sets:del_element(Addr, Agents)}}.
 
 handle_info(_Info, State) ->
