@@ -1,6 +1,6 @@
 -module(service_broker_store).
 
--export([init/0, insert/2, delete/2]).
+-export([init/0, insert/2, delete/2, exists/2]).
 
 -include_lib("service_agent/include/service_agent.hrl").
 -include("service_broker.hrl").
@@ -56,24 +56,15 @@ create_schema() ->
 
 -spec insert_broker_instance(#broker_instance{}) -> ok.
 insert_broker_instance(#broker_instance{instance_id = Id}=Inst) ->
-  ok = service_agent_proxy:create(Id),
-  mnesia:write(Inst),
-  ok.
+  ok = service_agent_proxy:create(Id), mnesia:write(Inst), ok.
 
  -spec insert_broker_binding(#broker_binding{}) -> ok.
-insert_broker_binding(#broker_binding{ instance_id = Id,
-	                                   app_guid = AppGuid
-								     } = Bind) ->
-  mnesia:write(Bind),
-  ok.
+insert_broker_binding(Bind) -> mnesia:write(Bind), ok.
 
 -spec delete_broker_instance(#broker_instance{}) -> ok.
-delete_broker_instance(#broker_instance{instance_id = Id}=Inst) ->
-  ok = service_agent_proxy:delete(Id),
-  mnesia:delete(Id, broker_binding),
-  ok.
+delete_broker_instance(#broker_instance{instance_id = Id}) ->
+  ok = service_agent_proxy:delete(Id), mnesia:delete({broker_binding, Id}), ok.
 
  -spec delete_broker_binding(#broker_binding{}) -> ok.
-delete_broker_binding(#broker_binding{instance_id = Id} = Bind) ->
-  mnesia:delete(Id, broker_binding),
-  ok.
+delete_broker_binding(#broker_binding{instance_id = Id}) ->
+  mnesia:delete({broker_binding, Id}), ok.

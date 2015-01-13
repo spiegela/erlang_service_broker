@@ -1,8 +1,9 @@
 -module(service_broker_instance_handler).
 -author('spiegela@gmail.com').
 
--export([init/2, allowed_methods/2, content_types_accepted/2, is_authorized/2,
-         is_conflict/2, malformed_request/2, delete_resource/2]).
+-export([init/2, service_available/2, allowed_methods/2,
+         content_types_accepted/2, is_authorized/2, is_conflict/2,
+         malformed_request/2, delete_resource/2]).
 
 -export([put_json/2]).
 
@@ -15,18 +16,21 @@
 
 %%% Cowboy REST Handler Callbacks
 
-init(Req, Opts) ->
+init(Req, _Opts) ->
+  Id   = cowboy_req:binding(instance_id, Req),
+  Id2  = list_to_atom(binary_to_list(Id)),
   % Preemptively set resp body to generic error indicator (empty JSON object)
   % This will be overwritten upon successful return or more specific error(s).
-  Req1 = cowboy_req:set_resp_body(Req, "{}"),
+  Req1 = cowboy_req:set_resp_body("{}", Req),
+  {cowboy_rest, Req1, #state{instance_id = Id2}}.
+
+service_available(Req, State) ->
   case cowboy_req:header(<<"X-Broker-Api-Version">>, Req) of
-  	<<"2.4">> ->
-      Id  = cowboy_req:binding(Req, instance_id),
-      Id2 = list_to_atom(binary_to_list(Id)),
-	    {cowboy_rest, Req1, #state{instance_id = Id2}};
+    <<"2.4">> ->
+      {true, Req, State};
     _ ->
-      Req2 = cowboy_req:reply(412, Req),  % Unsupported version return 412
-      {halt, Req2, undefined}
+      Req1 = cowboy_req:reply(412, Req), % Unsupported version return 412
+      {halt, Req1, State}
   end.
 
 is_authorized(Req, State) ->
@@ -57,11 +61,11 @@ malformed_request(Req, State) ->
   catch
   	throw:Errors ->
       Resp = #{ <<"description">> => Errors },
-  	  Req1 = cowboy_req:set_resp_body(jiffy:encode(Resp)),
+  	  Req1 = cowboy_req:set_resp_body(jiffy:encode(Resp), Req),
   	  {true, Req1, State};
   	error:truncated_json ->
   	  Resp = #{ <<"description">> => <<"JSON request body is invalid.">> },
-  	  Req1 = cowboy_req:set_resp_body(jiffy:encode(Resp)),
+  	  Req1 = cowboy_req:set_resp_body(jiffy:encode(Resp), Req),
   	  {true, Req1, State}
   end.
 
@@ -80,15 +84,17 @@ read_body(Req, State) -> read_body(cowboy_req:method(Req), Req, State).
 
 %% @priv
 read_body(<<"PUT">>, Req, #state{instance_id = Id}) ->
-  {Body1, Req1} = read_chunked_body(cowboy_req:body(Req), []),
-  Body2 = parse_body(Body1),
-  Body3 = Body2#broker_instance{instance_id = Id},
-  check_body(Body3),
-  {Body3, Req1};
+  {Body, Req1} = read_chunked_body(cowboy_req:body(Req), []),
+  Body1 = parse_body(Body),
+  Body2 = Body1#broker_instance{instance_id = Id},
+  check_body(Body2),
+  {Body2, Req1};
 read_body(<<"DELETE">>, Req, _State) ->
   {undefined, Req}.
 
 %% @priv
+-spec read_chunked_body({more | ok, binary(), cowboy_req:req()}, list()) ->
+  {binary(), cowboy_req:req()}.
 read_chunked_body({more, Data, Req}, Acc) ->
   read_chunked_body(cowboy_req:body(Req), [Data|Acc]);
 read_chunked_body({ok, Data, Req}, Acc) ->
@@ -97,9 +103,7 @@ read_chunked_body({ok, Data, Req}, Acc) ->
 
 %% @priv
 -spec parse_body(binary()) -> #broker_instance{}.
-parse_body(Body) ->
-  Body   = jiffy:decode(Body),
-  plist_to_rec(Body).
+parse_body(Body) -> {Body1} = jiffy:decode(Body), plist_to_rec(Body1).
 
 %% @priv
 -spec plist_to_rec(service_instance_list()) -> #broker_instance{}.
@@ -107,7 +111,7 @@ plist_to_rec(Plist) ->
   lists:foldl(fun add_to_record/2, #broker_instance{}, Plist).
 
 %% @priv
--spec add_to_record(service_attr_input(), #broker_instance{}) ->
+-spec add_to_record(service_instance_input(), #broker_instance{}) ->
   #broker_instance{}.
 add_to_record({<<"service_id">>, ServiceId}, Rec) ->
   Rec#broker_instance{service_id = ServiceId};
@@ -118,9 +122,12 @@ add_to_record({<<"organization_guid">>, OrgId}, Rec) ->
 add_to_record({<<"space_guid">>, SpaceId}, Rec) ->
   Rec#broker_instance{space_guid = SpaceId}.
 
--spec check_body(#broker_instance{}) -> true | {false, Error}.
+-spec check_body(#broker_instance{}) -> ok.
 check_body(Inst) ->
-  case body_errors(Inst) of [] -> ok; Errors -> throw(format_error(Errors)) end.
+  case body_errors(Inst) of
+    [] -> ok;
+    Errors -> throw(format_errors(Errors))
+  end.
 
 -spec format_errors(iolist()) -> binary().
 format_errors(Errors) ->
@@ -130,43 +137,44 @@ format_errors(Errors) ->
 
 -spec body_errors(#broker_instance{}) -> errors().
 body_errors(Inst) ->
-  lists:filtermap(fun(Field) -> check_body(Field, Inst) end, req_fields()).
+  lists:filtermap(fun(Field) -> body_error(Field, Inst) end, req_fields()).
 
 -spec body_error(service_instance_field(), #broker_instance{}) ->
   false | {true, string()}.
-body_error(instance_id, #broker_instance{instance_id = undefined}, Errors) ->
+body_error(instance_id, #broker_instance{instance_id = undefined}) ->
   {true, "Required field, instance_id, not provided."};
-body_error(instance_id, #broker_instance{instance_id = Id}, Errors) ->
+body_error(instance_id, #broker_instance{instance_id = Id}) ->
   case re:run(Id, "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, instance_id, is blank."}
   end;
 body_error(service_id, #broker_instance{service_id = undefined}) ->
   {true, "Required field, service_id, not provided."};
-                       service_id = <<"9c3b67af-d80c-4e4c-89ee-f6181a3facad">>
-                    }, Errors) ->
+body_error(service_id, #broker_instance{
+                         service_id = <<"9c3b67af-d80c-4e4c-89ee-f6181a3facad">>
+                       }) ->
   false;
 body_error(service_id, #broker_instance{service_id = _ServiceId}) ->
   {true, "Service not found in catalog"};
 body_error(plan_id, #broker_instance{plan_id = undefined}) ->
   {true, "Required field, plan_id, not provided."};
 body_error(plan_id, #broker_instance{
-                       plan_id = <<"961dffa6-1a80-466e-8928-080f5ff9f63f">>
-                    }, Errors) ->
+                      plan_id = <<"961dffa6-1a80-466e-8928-080f5ff9f63f">>
+                    }) ->
   false;
 body_error(plan_id, #broker_instance{plan_id = _PlanId}) ->
   {true, "Plan not found in catalog"};
 body_error(org_guid, #broker_instance{org_guid = undefined}) ->
   {true, "Required field, org_guid, not provided."};
-body_error(org_guid, #broker_instance{org_guid = OrgId}, Errors) ->
-  case re:run(Id, "^[\s|\t]*$") of
+body_error(org_guid, #broker_instance{org_guid = OrgId}) ->
+  case re:run(OrgId, "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, org_guid, is blank."}
   end;
 body_error(space_guid, #broker_instance{space_guid = undefined}) ->
-  {true, "Required field, space_guid, not provided."}.
-body_error(space_guid, #broker_instance{space_guid = SpaceId}, Errors) ->
-  case re:run(Id, "^[\s|\t]*$") of
+  {true, "Required field, space_guid, not provided."};
+body_error(space_guid, #broker_instance{space_guid = SpaceId}) ->
+  case re:run(SpaceId, "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, space_guid, is blank."}
   end;

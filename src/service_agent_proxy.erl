@@ -3,7 +3,7 @@
 %%% @end
 -module(service_agent_proxy).
 
--export([create/1, create/2, create/3, create/4, delete/1, delete/2,
+-export([setup/0, create/1, create/2, create/3, create/4, delete/1, delete/2,
          refresh_instances/0, get/1]).
 
 -include_lib("service_agent/include/service_agent.hrl").
@@ -14,7 +14,6 @@
 
 -type instance_id() :: atom().
 -type instance_loc() :: {agent(), #agent_instance{}}.
--type agent() :: atom().
 -type agent_load() :: {non_neg_integer(), agent()}.
 -type dist_min() :: pos_integer().
 -type cookie() :: atom().
@@ -39,7 +38,7 @@ create(Id, Agent, DistMin) ->
 %% @doc Create a new instance on a specific agent, dist_min and cookie
 -spec create(instance_id(), agent(), dist_min(), cookie()) -> ok.
 create(Id, Agent, DistMin, Cookie) ->
-  DistMax = DistMin - 1 + ?DIST_RANGE_SIZE
+  DistMax = DistMin - 1 + ?DIST_RANGE_SIZE,
   Inst = #agent_instance{ instance_id = Id,
                           cookie      = Cookie,
                           dist_min    = DistMin,
@@ -56,15 +55,24 @@ delete(Id) ->
 delete(Id, Agent) ->
   rpc:call(Agent, service_agent, delete, [#agent_instance{instance_id = Id}]).
 
-%% @doc Populate the instance list.
+%% @doc (Re)populate the instance list.
 -spec refresh_instances() -> ok.
 refresh_instances() ->
-  ets:new(instance_locations, [set, named_table]),
-  true = ets:insert(instance_locations, query_instances()),
-  ok.
+  ets:delete_all_objects(instance_locations),
+  case query_instances() of
+    []       -> ok;
+    InstList -> true = ets:insert(instance_locations, InstList), ok
+  end.
+
+%% @doc initialize tables for setup
+-spec setup() -> ok.
+setup() ->
+  instance_locations = ets:new(instance_locations, [set, named_table]),
+  refresh_instances().
 
 %% @doc Lookup an agent instance record
--spec get(Id) -> instance_by_id(Id).
+-spec get(instance_id()) -> #agent_instance{}.
+get(Id) -> instance_by_id(Id).
 
 %%% Internal Functions
 
@@ -79,21 +87,17 @@ next_agent() ->
 -spec agent_by_id(instance_id()) -> agent().
 agent_by_id(Id) ->
   Match = {'$1', #agent_instance{instance_id = Id, _ = '_'}},
-  match_one_value(instance_locations, Match).
+  [[Value]] = ets:match(instance_locations, Match), Value.
 
 %% @doc Select the instance of a provided id.
--spec instance_by_id(instance_id()) -> agent().
+-spec instance_by_id(instance_id()) -> #agent_instance{}.
 instance_by_id(Id) ->
-  Match = {_, #agent_instance{instance_id = Id, _ = '_'}='$1'},
-  match_one_value(instance_locations, Match).
-
--spec match_one_value(atom(), tuple()) ->
-match_one_value(Table, Match) ->
-  [[Value]] = ets:match(Table, Match), Value.
+  Match = {'_', #agent_instance{instance_id = Id, _ = '_'}},
+  [{_Agent, Inst}] = ets:match_object(instance_locations, Match), Inst.
 
 -spec next_dist_min(agent()) -> pos_integer().
 next_dist_min(Agent) ->
-  Match = {Agent, #agent_instance{dist_min = '$1', _ = '_'}}
+  Match = {Agent, #agent_instance{dist_min = '$1', _ = '_'}},
   Ports = lists:sort(lists:flatten(ets:match(instance_locations, Match))),
   next_avail_port(Ports).
 
@@ -103,8 +107,8 @@ next_avail_port(Ports) -> next_avail_port(Ports, ?DIST_PORT_START).
 
 -spec next_avail_port([pos_integer()], pos_integer()) -> pos_integer().
 next_avail_port([UsedPort|T], UsedPort) ->
-  next_avail_port(T, UsedPort + ?DIST_RANGE_SIZE)
-next_avail_port([UsedPort|T], UnusedPort) when UnusedPort > UsedPort ->
+  next_avail_port(T, UsedPort + ?DIST_RANGE_SIZE);
+next_avail_port([UsedPort|_T], UnusedPort) when UnusedPort > UsedPort ->
   UnusedPort.
 
 -spec generate_cookie() -> atom().
@@ -123,7 +127,7 @@ query_instances() -> lists:flatmap(fun query_instances/1, agents()).
 
 -spec query_instances(agent()) -> [instance_loc()].
 query_instances(Agent) ->
-  [{Agent, Inst} || Inst <- rpc:call(Agent, service_agent, list)].
+  [{Agent, Inst} || Inst <- rpc:call(Agent, service_agent, list, [])].
 
 -spec agents() -> [agent()].
 agents() ->
