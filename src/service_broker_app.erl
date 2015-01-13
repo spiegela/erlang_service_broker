@@ -9,13 +9,14 @@
 
 -define(C_ACCEPTORS,  100).
 
--export([start/0, start/2, stop/0, stop/1]).
+-export([start/0, start/2, stop/0, stop/1, setup/0]).
 
 %% ADMIN API
 %% @doc Starts the application
 start() ->
   % application:ensure_all_started(service_broker),
-  [ application:start(X) || X <- [ crypto, ranch, cowlib, cowboy, service_broker ]],
+  % [ application:start(X) || X <- [crypto, ranch, cowlib, cowboy] ],
+  setup(),
   Routes    = routes(),
   Dispatch  = cowboy_router:compile(Routes),
   Port      = port(),
@@ -47,9 +48,9 @@ port() ->
       list_to_integer(Other)
   end.
 
-setup_tables() ->
+setup() ->
   % Initialize ETS table with agent hosted instances
-  service_agent_proxy:refresh_instances(),
+  service_agent_proxy:setup(),
   % Initialize Mnesia Database
   service_broker_store:init().
 
@@ -59,7 +60,7 @@ routes() ->
       [
         { "/v2/catalog",
           cowboy_static,
-          { priv_file, service_broker, "catalog.json"}
+          { priv_file, service_broker, "static/catalog.json"}
         },
         { "/v2/service_instances/:instance_id",
           service_broker_instance_handler,
