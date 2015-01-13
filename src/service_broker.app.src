@@ -4,9 +4,13 @@
   {vsn, "1"},
   {registered, []},
   {applications, [
-                  kernel,
-                  stdlib
-                 ]},
+	 kernel,
+	 stdlib,
+	 sasl,
+	 crypto,
+	 cowboy,
+	 mnesia
+  ]},
   {mod, { service_broker_app, []}},
   {env, [{http_port, 8080}]}
  ]}.
