@@ -1,5 +1,5 @@
 ## Name of the node
--name service_broker@127.0.0.1
+-name service_broker@$BIND_ADDR
 
 ## Cookie for distributed erlang
 ## TODO:  Set this randoming during packaging
