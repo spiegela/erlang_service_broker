@@ -1,5 +1,8 @@
 ## Name of the node
--name service_broker@127.0.0.1
+-name service_broker@$BIND_ADDR
+
+## Name of the node
+-eval "{ok,[{addr, Ip}]} = inet:ifget(\"eth1\", [addr]), IpStr = inet_parse:ntoa(Ip), net_kernel:start([list_to_atom(lists:concat(['toseemo@', IpStr])), longnames]).
 
 ## Cookie for distributed erlang
 ## TODO:  Set this randoming during packaging
