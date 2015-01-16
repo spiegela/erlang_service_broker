@@ -76,7 +76,8 @@ else
 fi
 
 # Extract the target node name from node.args
-NAME_ARG=`egrep '^\-s?name' $VMARGS_PATH`
+NAME_ARG_IN=`egrep '^\-s?name' $VMARGS_PATH`
+NAME_ARG=`eval echo $NAME_ARG_IN`
 if [ -z "$NAME_ARG" ]; then
     echo "vm.args needs to have either -name or -sname parameter."
     exit 1
