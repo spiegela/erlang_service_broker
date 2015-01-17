@@ -1,6 +1,6 @@
 ## Name of the node set by NAME_ARG env variable
 -name service_broker@`echo $BIND_ADDR`
--eval 'Ip = os:getenv("BIND_ADDR"), net_kernel:start([list_to_atom(lists:concat(["service_broker@", Ip])), longnames]).'
+-eval 'Ip = os:getenv("BIND_ADDR"), net_kernel:start([list_to_atom(lists:concat(["service_broker@", Ip])), longnames]), file:write_file(os:getenv("PIDFILE"), os:getpid()).'
 
 ## Cookie for distributed erlang
 ## TODO:  Set this randoming during packaging
