@@ -9,32 +9,24 @@
 
 -define(C_ACCEPTORS,  100).
 
--export([start/0, start/2, stop/0, stop/1, setup/0]).
+-export([start/2, stop/0, stop/1, setup/0]).
 
 %% ADMIN API
 %% @doc Starts the application
-start() ->
-  % application:ensure_all_started(service_broker),
-  % [ application:start(X) || X <- [crypto, ranch, cowlib, cowboy] ],
+start(_StartType, _StartArgs) ->
+  SupReturn = service_broker_sup:start_link(),
   setup(),
   Routes    = routes(),
   Dispatch  = cowboy_router:compile(Routes),
   Port      = port(),
   TransOpts = [{port, Port}],
-  ProtoOpts = [
-    {env, [ {dispatch, Dispatch} ]}
-    %{onrequest, fun on_request/1}
-  ],
+  ProtoOpts = [ {env, [ {dispatch, Dispatch} ]} ],
   % Start the web-server with the appropriate options
   {ok, _} = cowboy:start_http(http, ?C_ACCEPTORS, TransOpts, ProtoOpts),
-  service_broker_sup:start_link().
+  SupReturn.
 
 %% @doc Stops the application
 stop() -> application:stop(service_broker).
-
-%% BEHAVIOUR CALLBACKS
-%% @private
-start(_StartType, _StartArgs) -> service_broker_sup:start_link().
 
 %% @private
 stop(_State) -> ok.
