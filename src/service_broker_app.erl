@@ -52,7 +52,11 @@ routes() ->
       [
         { "/v2/catalog",
           cowboy_static,
-          { priv_file, service_broker, "static/catalog.json"}
+          { priv_file,
+            service_broker,
+            "static/catalog.json",
+            [{mimetypes, {<<"application">>, <<"json">>, []}}]
+          }
         },
         { "/v2/service_instances/:instance_id",
           service_broker_instance_handler,
