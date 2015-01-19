@@ -48,7 +48,7 @@ is_authorized(Req, State) ->
   	_AuthString ->
       case cowboy_req:parse_header(<<"authorization">>, Req) of
         {<<"basic">>, {?USERNAME, ?PASSWORD}} ->
-          true;
+          {true, Req, State};
         _ ->
           {AuthFailure, Req, State}
       end
