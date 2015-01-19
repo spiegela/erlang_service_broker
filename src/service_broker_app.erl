@@ -20,7 +20,13 @@ start(_StartType, _StartArgs) ->
   Dispatch  = cowboy_router:compile(Routes),
   Port      = port(),
   TransOpts = [{port, Port}],
-  ProtoOpts = [ {env, [ {dispatch, Dispatch} ]} ],
+  ProtoOpts = [ {env, [ {dispatch, Dispatch} ]},
+                {middlewares, [ cowboy_router,
+                                cowboy_printer,
+                                cowboy_handler
+                              ]},
+                {onresponse, fun cowboy_printer:execute/4}
+              ],
   % Start the web-server with the appropriate options
   {ok, _} = cowboy:start_http(http, ?C_ACCEPTORS, TransOpts, ProtoOpts),
   SupReturn.
