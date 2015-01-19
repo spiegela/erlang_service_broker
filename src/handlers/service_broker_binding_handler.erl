@@ -41,13 +41,15 @@ service_available(Req, State) ->
 
 is_authorized(Req, State) ->
   AuthFailure = {false, "Basic realm=\"Authenticated\""},
-  case cowboy_req:header(<<"Authentication">>, Req) of
+  case cowboy_req:header(<<"authorization">>, Req) of
     undefined  ->
       {AuthFailure, Req, State};
     _AuthString ->
-      case cowboy_req:parse_header(<<"Authentication">>, Req) of
-        {?USERNAME, ?PASSWORD} -> true;
-        _                      -> {AuthFailure, Req, State}
+      case cowboy_req:parse_header(<<"authorization">>, Req) of
+        {<<"basic">>, {?USERNAME, ?PASSWORD}} ->
+          true;
+        _ ->
+          {AuthFailure, Req, State}
       end
   end.
 
