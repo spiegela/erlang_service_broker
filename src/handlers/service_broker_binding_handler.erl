@@ -31,7 +31,7 @@ init(Req, _Opts) ->
   {cowboy_rest, Req1, #state{instance_id = InstId2, binding_id = BindId2}}.
 
 service_available(Req, State) ->
-  case cowboy_req:header(<<"X-Broker-Api-Version">>, Req) of
+  case cowboy_req:header(<<"x-broker-api-version">>, Req) of
     <<"2.4">> ->
       {true, Req, State};
     _ ->

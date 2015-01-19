@@ -25,10 +25,17 @@ init(Req, _Opts) ->
   {cowboy_rest, Req1, #state{instance_id = Id2}}.
 
 service_available(Req, State) ->
-  case cowboy_req:header(<<"X-Broker-Api-Version">>, Req) of
-    <<"2.4">> ->
+  Version = cowboy_req:header(<<"x-broker-api-version">>, Req),
+  Agents  = service_agent_registry:list(),
+  case {Version, Agents} of
+    {<<"2.4">>, []} ->
+      % No agents are available for provisioning
+      {false, Req, State};
+    {<<"2.4">>, Agents} ->
+      % We have agents, and are responding at the right version
       {true, Req, State};
-    _ ->
+    {Version, Agents} ->
+      % We have agents, but the broker API version isn't supported
       Req1 = cowboy_req:reply(412, Req), % Unsupported version return 412
       {halt, Req1, State}
   end.
