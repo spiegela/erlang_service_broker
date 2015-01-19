@@ -9,7 +9,8 @@
 	 sasl,
 	 crypto,
 	 cowboy,
-	 mnesia
+	 mnesia,
+   cowboy_printer
   ]},
   {mod, { service_broker_app, []}},
   {env, [{http_port, 8080}]}
