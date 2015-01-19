@@ -151,7 +151,7 @@ body_errors(Inst) ->
 body_error(instance_id, #broker_instance{instance_id = undefined}) ->
   {true, "Required field, instance_id, not provided."};
 body_error(instance_id, #broker_instance{instance_id = Id}) ->
-  case re:run(Id, "^[\s|\t]*$") of
+  case re:run(atom_to_list(Id), "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, instance_id, is blank."}
   end;
