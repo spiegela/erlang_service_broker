@@ -154,14 +154,14 @@ body_errors(Inst) ->
 body_error(instance_id, #broker_binding{instance_id = undefined}) ->
   {true, "Required field, instance_id, not provided."};
 body_error(instance_id, #broker_binding{instance_id = Id}) ->
-  case re:run(Id, "^[\s|\t]*$") of
+  case re:run(atom_to_list(Id), "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, instance_id, is blank."}
   end;
 body_error(binding_id, #broker_binding{binding_id = undefined}) ->
   {true, "Required field, binding_id, not provided."};
 body_error(binding_id, #broker_binding{binding_id = Id}) ->
-  case re:run(Id, "^[\s|\t]*$") of
+  case re:run(atom_to_list(Id), "^[\s|\t]*$") of
     nomatch -> false;
     _Match  -> {true, "Required field, binding_id, is blank."}
   end;
