@@ -49,8 +49,8 @@ is_fresh_startup() ->
 %% @doc create initial schema for mnesia tables
 create_schema() ->
   mnesia:delete_schema(['nonode@nohost']),
-  mnesia:create_schema([node()]),
   mnesia:start(),
+  mnesia:create_schema([node()]),
   mnesia:create_table( broker_instance,
   	                   [ { attributes,
   	                       record_info(fields, broker_instance) } ] ), 

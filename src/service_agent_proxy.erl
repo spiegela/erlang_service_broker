@@ -49,11 +49,9 @@ create(Id, Agent, DistMin, Cookie) ->
 
 -spec delete(instance_id()) -> ok.
 delete(Id) ->
-  delete(Id, agent_by_id(Id)).
-
--spec delete(instance_id(), agent()) -> ok.
-delete(Id, Agent) ->
-  rpc:call(Agent, service_agent, delete, [#agent_instance{instance_id = Id}]).
+  {Agent, Inst} = Location = location_by_id(Id),
+  rpc:call(Agent, service_agent, delete, [Inst]),
+  ets:delete_object(instance_locations, Location).
 
 %% @doc (Re)populate the instance list.
 -spec refresh_instances() -> ok.
@@ -69,10 +67,6 @@ refresh_instances() ->
 setup() ->
   instance_locations = ets:new(instance_locations, [set, named_table, public]),
   refresh_instances().
-
-%% @doc Lookup an agent instance record
--spec get(instance_id()) -> #agent_instance{}.
-get(Id) -> instance_by_id(Id).
 
 %%% Internal Functions
 
@@ -90,11 +84,11 @@ agent_by_id(Id) ->
   Match = {'$1', #agent_instance{instance_id = Id, _ = '_'}},
   [[Value]] = ets:match(instance_locations, Match), Value.
 
-%% @doc Select the instance of a provided id.
--spec instance_by_id(instance_id()) -> #agent_instance{}.
-instance_by_id(Id) ->
+%% @doc Select the location of a provided id.
+-spec location_by_id(instance_id()) -> #agent_instance{}.
+location_by_id(Id) ->
   Match = {'_', #agent_instance{instance_id = Id, _ = '_'}},
-  [{_Agent, Inst}] = ets:match_object(instance_locations, Match), Inst.
+  [Location] = ets:match_object(instance_locations, Match), Location.
 
 -spec next_dist_min(agent()) -> pos_integer().
 next_dist_min(Agent) ->
@@ -107,6 +101,8 @@ next_avail_port([])    -> ?DIST_PORT_START;
 next_avail_port(Ports) -> next_avail_port(Ports, ?DIST_PORT_START).
 
 -spec next_avail_port([pos_integer()], pos_integer()) -> pos_integer().
+next_avail_port([], UnusedPort) ->
+  UnusedPort;
 next_avail_port([UsedPort|T], UsedPort) ->
   next_avail_port(T, UsedPort + ?DIST_RANGE_SIZE);
 next_avail_port([UsedPort|_T], UnusedPort) when UnusedPort > UsedPort ->
