@@ -81,7 +81,7 @@ get(Id) -> instance_by_id(Id).
 next_agent() ->
   Counters = lists:map(fun(A) -> {0, A} end, agents()),
   Loads = ets:foldl(fun agent_load/2, Counters, instance_locations),
-  {_Load, Agent} = lists:min(AgentLoads),
+  {_Load, Agent} = lists:min(Loads),
   Agent.
 
 %% @doc Select the agent containing a provided id.
