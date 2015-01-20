@@ -3,8 +3,8 @@
 %%% @end
 -module(service_agent_proxy).
 
--export([setup/0, create/1, create/2, create/3, create/4, delete/1, delete/2,
-         refresh_instances/0, get/1]).
+-export([setup/0, create/1, create/2, create/3, create/4, delete/1,
+         refresh_instances/0]).
 
 -include_lib("service_agent/include/service_agent.hrl").
 -include("service_broker.hrl").
@@ -78,12 +78,6 @@ next_agent() ->
   {_Load, Agent} = lists:min(Loads),
   Agent.
 
-%% @doc Select the agent containing a provided id.
--spec agent_by_id(instance_id()) -> agent().
-agent_by_id(Id) ->
-  Match = {'$1', #agent_instance{instance_id = Id, _ = '_'}},
-  [[Value]] = ets:match(instance_locations, Match), Value.
-
 %% @doc Select the location of a provided id.
 -spec location_by_id(instance_id()) -> #agent_instance{}.
 location_by_id(Id) ->
@@ -127,6 +121,3 @@ query_instances(Agent) ->
 
 -spec agents() -> [agent()].
 agents() -> service_agent_registry:list().
-
--spec host_to_agent(string()) -> agent().
-host_to_agent(Host) -> list_to_atom("service_agent@" ++ Host).
