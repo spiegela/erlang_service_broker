@@ -107,6 +107,8 @@ next_avail_port([])    -> ?DIST_PORT_START;
 next_avail_port(Ports) -> next_avail_port(Ports, ?DIST_PORT_START).
 
 -spec next_avail_port([pos_integer()], pos_integer()) -> pos_integer().
+next_avail_port([], UnusedPort) ->
+  UnusedPort;
 next_avail_port([UsedPort|T], UsedPort) ->
   next_avail_port(T, UsedPort + ?DIST_RANGE_SIZE);
 next_avail_port([UsedPort|_T], UnusedPort) when UnusedPort > UsedPort ->
