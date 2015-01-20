@@ -29,7 +29,10 @@ delete(broker_binding, Bind) ->
  
 -spec exists(storable_type(), storable()) -> boolean().
 exists(Table, Id) ->
-  case mnesia:read({Table, Id}) of [] -> false; _ -> true end.
+  F = fun() ->
+        case mnesia:read({Table, Id}) of [] -> false; _ -> true end
+      end,
+  mnesia:activity(transaction, F).
 
 %% @doc Check to see if mnesia has been started on this system before
 is_fresh_startup() ->
