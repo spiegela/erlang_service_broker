@@ -3,8 +3,8 @@
 %%% @end
 -module(service_agent_proxy).
 
--export([setup/0, create/1, create/2, create/3, create/4, delete/1, delete/2,
-         refresh_instances/0, get/1]).
+-export([setup/0, create/1, create/2, create/3, create/4, delete/1,
+         refresh_instances/0]).
 
 -include_lib("service_agent/include/service_agent.hrl").
 -include("service_broker.hrl").
@@ -49,12 +49,9 @@ create(Id, Agent, DistMin, Cookie) ->
 
 -spec delete(instance_id()) -> ok.
 delete(Id) ->
-  delete(Id, agent_by_id(Id)).
-
--spec delete(instance_id(), agent()) -> ok.
-delete(Id, Agent) ->
-  rpc:call(Agent, service_agent, delete, [#agent_instance{instance_id = Id}]),
-  ets:delete_object(instance_locations, {Agent, Inst}).
+  {Agent, Inst} = Location = location_by_id(Id),
+  rpc:call(Agent, service_agent, delete, [Inst]),
+  ets:delete_object(instance_locations, Location).
 
 %% @doc (Re)populate the instance list.
 -spec refresh_instances() -> ok.
@@ -71,10 +68,6 @@ setup() ->
   instance_locations = ets:new(instance_locations, [set, named_table, public]),
   refresh_instances().
 
-%% @doc Lookup an agent instance record
--spec get(instance_id()) -> #agent_instance{}.
-get(Id) -> instance_by_id(Id).
-
 %%% Internal Functions
 
 %% @doc Select the preferrable agent to provision from.
@@ -85,17 +78,11 @@ next_agent() ->
   {_Load, Agent} = lists:min(Loads),
   Agent.
 
-%% @doc Select the agent containing a provided id.
--spec agent_by_id(instance_id()) -> agent().
-agent_by_id(Id) ->
-  Match = {'$1', #agent_instance{instance_id = Id, _ = '_'}},
-  [[Value]] = ets:match(instance_locations, Match), Value.
-
-%% @doc Select the instance of a provided id.
--spec instance_by_id(instance_id()) -> #agent_instance{}.
-instance_by_id(Id) ->
+%% @doc Select the location of a provided id.
+-spec location_by_id(instance_id()) -> #agent_instance{}.
+location_by_id(Id) ->
   Match = {'_', #agent_instance{instance_id = Id, _ = '_'}},
-  [{_Agent, Inst}] = ets:match_object(instance_locations, Match), Inst.
+  [Location] = ets:match_object(instance_locations, Match), Location.
 
 -spec next_dist_min(agent()) -> pos_integer().
 next_dist_min(Agent) ->
@@ -134,6 +121,3 @@ query_instances(Agent) ->
 
 -spec agents() -> [agent()].
 agents() -> service_agent_registry:list().
-
--spec host_to_agent(string()) -> agent().
-host_to_agent(Host) -> list_to_atom("service_agent@" ++ Host).
