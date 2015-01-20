@@ -67,7 +67,7 @@ refresh_instances() ->
 %% @doc initialize tables for setup
 -spec setup() -> ok.
 setup() ->
-  instance_locations = ets:new(instance_locations, [set, named_table]),
+  instance_locations = ets:new(instance_locations, [set, named_table, public]),
   refresh_instances().
 
 %% @doc Lookup an agent instance record
@@ -113,7 +113,7 @@ next_avail_port([UsedPort|_T], UnusedPort) when UnusedPort > UsedPort ->
   UnusedPort.
 
 -spec generate_cookie() -> atom().
-generate_cookie() -> list_to_atom(binary_to_list(ossp_uuid:make(v4, binary))).
+generate_cookie() -> list_to_atom(binary_to_list(ossp_uuid:make(v4, text))).
 
 -spec agent_load(instance_loc(), [agent_load()]) -> [agent_load()].
 agent_load({Agent, _Inst}, Loads) ->
