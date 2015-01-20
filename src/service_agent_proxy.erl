@@ -53,7 +53,8 @@ delete(Id) ->
 
 -spec delete(instance_id(), agent()) -> ok.
 delete(Id, Agent) ->
-  rpc:call(Agent, service_agent, delete, [#agent_instance{instance_id = Id}]).
+  rpc:call(Agent, service_agent, delete, [#agent_instance{instance_id = Id}]),
+  ets:delete_object(instance_locations, {Agent, Inst}).
 
 %% @doc (Re)populate the instance list.
 -spec refresh_instances() -> ok.
