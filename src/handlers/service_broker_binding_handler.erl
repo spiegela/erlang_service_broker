@@ -2,10 +2,11 @@
 -author('spiegela@gmail.com').
 
 -export([init/2, service_available/2, allowed_methods/2,
-         content_types_accepted/2, is_authorized/2, resource_exists/2,
-         is_conflict/2, malformed_request/2, delete_resource/2]).
+         content_types_provided/2, content_types_accepted/2, is_authorized/2,
+         resource_exists/2, is_conflict/2, malformed_request/2,
+         delete_resource/2]).
 
--export([put_json/2]).
+-export([put_json/2, to_json/2]).
 
 -include_lib("service_agent/include/service_agent.hrl").
 -include("service_broker.hrl").
@@ -64,6 +65,9 @@ is_conflict(Req, #state{binding_id = Id}=State) ->
   % TODO: Determine if binding is equal to return 200 OK
   {service_broker_store:exists(broker_binding, Id), Req, State}.
 
+content_types_provided(Req, State) ->
+  { [ { {<<"application">>, <<"json">>, []}, to_json } ], Req, State}.
+
 content_types_accepted(Req, State) ->
   { [ { {<<"application">>, <<"json">>, []}, put_json } ], Req, State}.
 
@@ -90,6 +94,9 @@ put_json(Req, #state{body = Body, instance_id = Id}=State) ->
   Body = agent_instance_creds(service_agent_proxy:get(Id)),
   Req1 = cowboy_req:set_resp_body(jiffy:encode(Body), Req),
   {true, Req1, State}.
+
+to_json(Req, #state{body = Body}=State) ->
+  {jiffy:encode({rec_to_plist(Body)}), Req, State}.
 
 %%% Internal Functions
 
@@ -123,6 +130,21 @@ parse_body(Body) -> Body1 = jiffy:decode(Body), plist_to_rec(Body1).
 -spec plist_to_rec(service_binding_list()) -> #broker_binding{}.
 plist_to_rec(Plist) ->
   lists:foldl(fun add_to_record/2, #broker_binding{}, Plist).
+
+%% @priv
+-spec rec_to_plist(#broker_instance{}) -> service_instance_list().
+rec_to_plist(#broker_binding{ instance_id = InstId,
+                              binding_id = BindId,
+                              service_id = ServId,
+                              plan_id = PlanId,
+                              app_guid = AppGuid
+                             }) ->
+  [ {<<"instance_id">>, list_to_binary(atom_to_list(InstId))},
+    {<<"binding_id">>, list_to_binary(atom_to_list(BindId))},
+    {<<"service_id">>, ServId},
+    {<<"plan_id">>, PlanId},
+    {<<"app_guid">>, AppGuid}
+  ].
 
 %% @priv
 -spec add_to_record(service_binding_input(), #broker_binding{}) ->
