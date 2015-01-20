@@ -50,6 +50,7 @@ is_fresh_startup() ->
 create_schema() ->
   mnesia:stop(),
   mnesia:create_schema([node()]),
+  mnesia:start(),
   mnesia:create_table( broker_instance,
   	                   [ { attributes,
   	                       record_info(fields, broker_instance) } ] ), 
