@@ -90,7 +90,7 @@ delete_resource(Req, #state{binding_id = Id}=State) ->
   {true, Req, State}.
 
 put_json(Req, #state{body = Body, instance_id = Id}=State) ->
-  service_broker_store:insert(broker_service_binding, Body),
+  service_broker_store:insert(broker_binding, Body),
   Body = agent_instance_creds(service_agent_proxy:get(Id)),
   Req1 = cowboy_req:set_resp_body(jiffy:encode(Body), Req),
   {true, Req1, State}.

@@ -9,7 +9,6 @@
 	 sasl,
 	 crypto,
 	 cowboy,
-	 mnesia,
    cowboy_printer
   ]},
   {mod, { service_broker_app, []}},

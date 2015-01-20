@@ -86,7 +86,7 @@ delete_resource(Req, #state{instance_id = Id }=State) ->
   {true, Req, State}.
 
 put_json(Req, #state{body = Body}=State) ->
-  service_broker_store:insert(broker_service_instance, Body),
+  service_broker_store:insert(broker_instance, Body),
   Req1 = cowboy_req:set_resp_body("{}", Req),
   {true, Req1, State}.
 
