@@ -65,7 +65,7 @@ is_conflict(Req, #state{binding_id = Id}=State) ->
   {service_broker_store:exists(broker_binding, Id), Req, State}.
 
 content_types_accepted(Req, State) ->
-  { [ { {<<"application">>, <<"json">>, '*'}, put_json } ], Req, State}.
+  { [ { {<<"application">>, <<"json">>, []}, put_json } ], Req, State}.
 
 malformed_request(Req, State) ->
   try read_body(Req, State) of
