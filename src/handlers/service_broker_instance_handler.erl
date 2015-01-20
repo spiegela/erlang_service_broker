@@ -2,10 +2,10 @@
 -author('spiegela@gmail.com').
 
 -export([init/2, service_available/2, allowed_methods/2,
-         content_types_accepted/2, is_authorized/2, is_conflict/2,
-         malformed_request/2, delete_resource/2]).
+         content_types_provided/2, content_types_accepted/2, is_authorized/2,
+         is_conflict/2, malformed_request/2, delete_resource/2]).
 
--export([put_json/2]).
+-export([put_json/2, to_json/2]).
 
 -include("service_broker.hrl").
 
@@ -61,6 +61,9 @@ is_conflict(Req, #state{instance_id = Id}=State) ->
   % TODO: Determine if instance is equal to return 200 OK
   {service_broker_store:exists(broker_instance, Id), Req, State}.
 
+content_types_provided(Req, State) ->
+  { [ { {<<"application">>, <<"json">>, []}, to_json } ], Req, State}.
+
 content_types_accepted(Req, State) ->
   { [ { {<<"application">>, <<"json">>, []}, put_json } ], Req, State}.
 
@@ -86,6 +89,9 @@ put_json(Req, #state{body = Body}=State) ->
   service_broker_store:insert(broker_service_instance, Body),
   Req1 = cowboy_req:set_resp_body("{}", Req),
   {true, Req1, State}.
+
+to_json(Req, #state{body = Body}=State) ->
+  {jiffy:encode({rec_to_plist(Body)}), Req, State}.
 
 %%% Internal Functions
 
@@ -119,6 +125,21 @@ parse_body(Body) -> {Body1} = jiffy:decode(Body), plist_to_rec(Body1).
 -spec plist_to_rec(service_instance_list()) -> #broker_instance{}.
 plist_to_rec(Plist) ->
   lists:foldl(fun add_to_record/2, #broker_instance{}, Plist).
+
+%% @priv
+-spec rec_to_plist(#broker_instance{}) -> service_instance_list().
+rec_to_plist(#broker_instance{ instance_id = InstId,
+                               service_id = ServId,
+                               plan_id = PlanId,
+                               org_guid = OrgGuid,
+                               space_guid = SpaceGuid
+                             }) ->
+  [ {<<"instance_id">>, list_to_binary(atom_to_list(InstId))},
+    {<<"service_id">>, ServId},
+    {<<"plan_id">>, PlanId},
+    {<<"organization_guid">>, OrgGuid},
+    {<<"space_guid">>, SpaceGuid}
+  ].
 
 %% @priv
 -spec add_to_record(service_instance_input(), #broker_instance{}) ->
