@@ -79,8 +79,9 @@ get(Id) -> instance_by_id(Id).
 %% @doc Select the preferrable agent to provision from.
 -spec next_agent() -> agent().
 next_agent() ->
-  AgentLoads = ets:foldl(fun agent_load/2, [], instance_locations),
-  {_Load, Agent} = lists:min(AgentLoads),
+  Counters = lists:map(fun(A) -> {0, A} end, agents()),
+  Loads = ets:foldl(fun agent_load/2, Counters, instance_locations),
+  {_Load, Agent} = lists:min(Loads),
   Agent.
 
 %% @doc Select the agent containing a provided id.
@@ -116,11 +117,10 @@ generate_cookie() -> list_to_atom(binary_to_list(ossp_uuid:make(v4, binary))).
 
 -spec agent_load(instance_loc(), [agent_load()]) -> [agent_load()].
 agent_load({Agent, _Inst}, Loads) ->
-  NewLoad = case lists:keyfind(Agent, 2, Loads) of
-  	false         -> {1, Agent};
-  	{Load, Agent} -> {Load + 1, Agent}
-  end,
-  lists:keystore(Agent, 2, Loads, {NewLoad, Agent}).
+  case lists:keyfind(Agent, 2, Loads) of
+  	false         -> Loads;
+  	{Load, Agent} -> lists:keystore(Agent, 2, Loads, {Load + 1, Agent})
+  end.
 
 -spec query_instances() -> [instance_loc()].
 query_instances() -> lists:flatmap(fun query_instances/1, agents()).
