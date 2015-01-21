@@ -124,7 +124,7 @@ read_chunked_body({ok, Data, Req}, Acc) ->
 
 %% @priv
 -spec parse_body(binary()) -> #broker_binding{}.
-parse_body(Body) -> Body1 = jiffy:decode(Body), plist_to_rec(Body1).
+parse_body(Body) -> {Body1} = jiffy:decode(Body), plist_to_rec(Body1).
 
 %% @priv
 -spec plist_to_rec(service_binding_list()) -> #broker_binding{}.
