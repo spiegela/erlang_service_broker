@@ -69,7 +69,7 @@ routes() ->
           []
         },
         { "/v2/service_instances/:instance_id/service_bindings/:binding_id",
-          servirce_broker_binding_handler,
+          service_broker_binding_handler,
           []
         }
       ]
