@@ -56,7 +56,7 @@ is_authorized(Req, State) ->
 
 allowed_methods(Req, State) -> {[<<"PUT">>, <<"DELETE">>], Req, State}.
 
-resource_exists(Req, #broker_binding{instance_id = Id}=State) ->
+resource_exists(Req, #state{instance_id = Id}=State) ->
   % Return 404 if the instance doesn't exist
   {service_broker_store:exists(broker_instance, Id), Req, State}.
 
