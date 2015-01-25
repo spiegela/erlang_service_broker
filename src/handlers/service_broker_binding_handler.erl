@@ -91,12 +91,15 @@ delete_resource(Req, #state{binding_id = Id}=State) ->
 
 put_json(Req, #state{body = Body, instance_id = Id}=State) ->
   service_broker_store:insert(broker_binding, Body),
-  Body = agent_instance_creds(service_agent_proxy:get(Id)),
-  Req1 = cowboy_req:set_resp_body(jiffy:encode(Body), Req),
+  Agent = agent_instance_creds(service_agent_proxy:get(Id)),
+  Resp =  {[{<<"credentials">>, Agent}]},
+  Req1 = cowboy_req:set_resp_body(jiffy:encode(Resp), Req),
   {true, Req1, State}.
 
-to_json(Req, #state{body = Body}=State) ->
-  {jiffy:encode({rec_to_plist(Body)}), Req, State}.
+to_json(Req, #state{instance_id = Id}=State) ->
+  Agent = agent_instance_creds(service_agent_proxy:get(Id)),
+  Resp =  {[{<<"credentials">>, Agent}]},
+  {jiffy:encode(Resp), Req, State}.
 
 %%% Internal Functions
 
@@ -132,18 +135,18 @@ plist_to_rec(Plist) ->
   lists:foldl(fun add_to_record/2, #broker_binding{}, Plist).
 
 %% @priv
--spec rec_to_plist(#broker_instance{}) -> service_instance_list().
-rec_to_plist(#broker_binding{ instance_id = InstId,
-                              binding_id = BindId,
-                              service_id = ServId,
-                              plan_id = PlanId,
-                              app_guid = AppGuid
+-spec agent_plist(#agent_instance{}) -> service_binding_list().
+agent_plist(#agent_instance{ instance_id = InstId,
+                              bind_addr = BindAddr,
+                              cookie = Cookie,
+                              dist_min = DistMin,
+                              dist_max = DistMax
                              }) ->
   [ {<<"instance_id">>, list_to_binary(atom_to_list(InstId))},
-    {<<"binding_id">>, list_to_binary(atom_to_list(BindId))},
-    {<<"service_id">>, ServId},
-    {<<"plan_id">>, PlanId},
-    {<<"app_guid">>, AppGuid}
+    {<<"host">>, list_to_binary(BindAddr)},
+    {<<"cookie">>, list_to_binary(atom_to_list(Cookie))},
+    {<<"dist_min">>, DistMin},
+    {<<"dist_max">>, DistMax}
   ].
 
 %% @priv
