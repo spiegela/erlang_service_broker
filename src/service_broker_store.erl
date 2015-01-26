@@ -10,8 +10,12 @@
 
 -spec init() -> ok.
 init() ->
+  case is_correct_node() of
+    false -> mnesia:stop(), mnesia:start();
+    true  -> true
+  end,
   case is_fresh_startup() of
-  	true             -> create_schema();
+  	true -> create_schema();
   	{exists, Tables} -> mnesia:wait_for_tables(Tables, 1000000)
   end.
 
@@ -35,6 +39,13 @@ exists(Table, Id) ->
   mnesia:activity(transaction, F).
 
 %% @doc Check to see if mnesia has been started on this system before
+is_correct_node() ->
+  case mnesia:system_info(db_nodes) of
+    ['nonode@nohost'] -> false;
+    _Nodes -> true
+  end.
+
+%% @doc Check to see if mnesia has been started on this system before
 is_fresh_startup() ->
   Node = node(),
   case mnesia:system_info(tables) of
@@ -48,7 +59,6 @@ is_fresh_startup() ->
 
 %% @doc create initial schema for mnesia tables
 create_schema() ->
-  mnesia:delete_schema(['nonode@nohost']),
   mnesia:start(),
   mnesia:create_schema([node()]),
   mnesia:create_table( broker_instance,
