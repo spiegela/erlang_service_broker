@@ -51,7 +51,8 @@ create(Id, Agent, DistMin, Cookie) ->
 delete(Id) ->
   {Agent, Inst} = Location = location_by_id(Id),
   rpc:call(Agent, service_agent, delete, [Inst]),
-  ets:delete_object(instance_locations, Location).
+  true = ets:delete_object(instance_locations, Location),
+  ok.
 
 %% @doc (Re)populate the instance list.
 -spec refresh_instances() -> ok.
@@ -83,7 +84,7 @@ next_agent() ->
   Agent.
 
 %% @doc Select the location of a provided id.
--spec location_by_id(instance_id()) -> #agent_instance{}.
+-spec location_by_id(instance_id()) -> instance_loc().
 location_by_id(Id) ->
   Match = {'_', #agent_instance{instance_id = Id, _ = '_'}},
   [Location] = ets:match_object(instance_locations, Match), Location.

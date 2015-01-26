@@ -160,7 +160,7 @@ check_body(Inst) ->
     Errors -> throw(format_errors(Errors))
   end.
 
--spec format_errors(iolist()) -> binary().
+-spec format_errors([string(),...]) -> binary().
 format_errors(Errors) ->
   Errors1 = ["JSON request body is invalid:"|Errors],
   Errors2 = string:join(Errors1, ", "),

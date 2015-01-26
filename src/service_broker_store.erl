@@ -27,7 +27,7 @@ delete(broker_instance, Inst) ->
 delete(broker_binding, Bind) ->
   mnesia:transaction(fun delete_broker_binding/1, [Bind]), ok.
  
--spec exists(storable_type(), storable()) -> boolean().
+-spec exists(storable_type(), atom()) -> boolean().
 exists(Table, Id) ->
   F = fun() ->
         case mnesia:read({Table, Id}) of [] -> false; _ -> true end
