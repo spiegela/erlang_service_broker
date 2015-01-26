@@ -71,7 +71,16 @@ setup() ->
 
 %% @doc lookup specific agent instance from Id
 -spec get(instance_id()) -> #agent_instance{}.
-get(Id) -> {_Agent, Inst} = location_by_id(Id), Inst.
+get(Id) ->
+  case location_by_id(Id) of
+    {Agent, #agent_instance{bind_addr = undefined} = Inst} = Location ->
+      Inst2 = rpc:call(Agent, service_agent, get, [Inst]),
+      ets:delete_object(instance_locations, Location),
+      ets:insert(instance_locations, {Agent, Inst2}),
+      Inst2;
+    {_Agent, Inst} ->
+      Inst
+  end.
 
 %%% Internal Functions
 
