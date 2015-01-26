@@ -22,10 +22,10 @@ insert(broker_binding, Bind) ->
   mnesia:transaction(fun insert_broker_binding/1, [Bind]), ok.
   
 -spec delete(storable_type(), atom()) -> ok.
-delete(broker_instance, Inst) ->
-  mnesia:transaction(fun delete_broker_instance/1, [Inst]), ok;
-delete(broker_binding, Bind) ->
-  mnesia:transaction(fun delete_broker_binding/1, [Bind]), ok.
+delete(broker_instance, Id) ->
+  mnesia:transaction(fun delete_broker_instance/1, [Id]), ok;
+delete(broker_binding, Id) ->
+  mnesia:transaction(fun delete_broker_binding/1, [Id]), ok.
  
 -spec exists(storable_type(), atom()) -> boolean().
 exists(Table, Id) ->
@@ -66,10 +66,10 @@ insert_broker_instance(#broker_instance{instance_id = Id}=Inst) ->
  -spec insert_broker_binding(#broker_binding{}) -> ok.
 insert_broker_binding(Bind) -> mnesia:write(Bind), ok.
 
--spec delete_broker_instance(#broker_instance{}) -> ok.
-delete_broker_instance(#broker_instance{instance_id = Id}) ->
-  ok = service_agent_proxy:delete(Id), mnesia:delete({broker_binding, Id}), ok.
+-spec delete_broker_instance(atom()) -> ok.
+delete_broker_instance(Id) ->
+  service_agent_proxy:delete(Id), mnesia:delete({broker_binding, Id}), ok.
 
- -spec delete_broker_binding(#broker_binding{}) -> ok.
-delete_broker_binding(#broker_binding{instance_id = Id}) ->
+ -spec delete_broker_binding(atom()) -> ok.
+delete_broker_binding(Id) ->
   mnesia:delete({broker_binding, Id}), ok.
