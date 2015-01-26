@@ -58,7 +58,7 @@ allowed_methods(Req, State) -> {[<<"PUT">>, <<"DELETE">>], Req, State}.
 
 resource_exists(Req, #state{instance_id = Id}=State) ->
   case service_broker_store:exists(broker_instance, Id) of
-    false -> {false, cowboy_req:reply(404, Req), State};
+    false -> {halt, cowboy_req:reply(404, Req), State};
     true -> {true, Req, State}
   end.
 
