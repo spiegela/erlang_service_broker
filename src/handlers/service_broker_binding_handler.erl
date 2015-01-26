@@ -57,8 +57,10 @@ is_authorized(Req, State) ->
 allowed_methods(Req, State) -> {[<<"PUT">>, <<"DELETE">>], Req, State}.
 
 resource_exists(Req, #state{instance_id = Id}=State) ->
-  % Return 404 if the instance doesn't exist
-  {service_broker_store:exists(broker_instance, Id), Req, State}.
+  case service_broker_store:exists(broker_instance, Id) of
+    false -> {false, cowboy_req:reply(404, Req), State};
+    true -> {true, Req, State}
+  end.
 
 is_conflict(Req, #state{binding_id = Id}=State) ->
   % Return 409 Conflict if the binding already exists
@@ -135,19 +137,20 @@ plist_to_rec(Plist) ->
   lists:foldl(fun add_to_record/2, #broker_binding{}, Plist).
 
 %% @priv
--spec agent_plist(#agent_instance{}) -> service_binding_list().
-agent_plist(#agent_instance{ instance_id = InstId,
-                              bind_addr = BindAddr,
-                              cookie = Cookie,
-                              dist_min = DistMin,
-                              dist_max = DistMax
-                             }) ->
-  [ {<<"instance_id">>, list_to_binary(atom_to_list(InstId))},
-    {<<"host">>, list_to_binary(BindAddr)},
-    {<<"cookie">>, list_to_binary(atom_to_list(Cookie))},
-    {<<"dist_min">>, DistMin},
-    {<<"dist_max">>, DistMax}
-  ].
+% TODO: Remove if no longer needed
+% -spec agent_plist(#agent_instance{}) -> service_binding_list().
+% agent_plist(#agent_instance{ instance_id = InstId,
+%                               bind_addr = BindAddr,
+%                               cookie = Cookie,
+%                               dist_min = DistMin,
+%                               dist_max = DistMax
+%                              }) ->
+%   [ {<<"instance_id">>, list_to_binary(atom_to_list(InstId))},
+%     {<<"host">>, list_to_binary(BindAddr)},
+%     {<<"cookie">>, list_to_binary(atom_to_list(Cookie))},
+%     {<<"dist_min">>, DistMin},
+%     {<<"dist_max">>, DistMax}
+%   ].
 
 %% @priv
 -spec add_to_record(service_binding_input(), #broker_binding{}) ->
