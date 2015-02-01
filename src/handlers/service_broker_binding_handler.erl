@@ -222,11 +222,11 @@ agent_instance_creds(#agent_instance{ instance_id = InstId,
                                       dist_min = DistMin,
                                       dist_max = DistMax
                                     }) ->
-  #{<<"credentials">> => #{
-       <<"instance_id">> => list_to_binary(atom_to_list(InstId)),
-       <<"bind_addr">>   => list_to_binary(BindAddr),
-       <<"cookie">>      => list_to_binary(atom_to_list(Cookie)),
-       <<"dist_min">>    => integer_to_binary(DistMin),
-       <<"dist_max">>    => integer_to_binary(DistMax)
-    }
+  Node = lists:concat([atom_to_list(InstId), "@", BindAddr]),
+  #{ <<"credentials">> => #{
+       <<"node">>     => list_to_binary(Node),
+       <<"cookie">>   => list_to_binary(atom_to_list(Cookie)),
+       <<"dist_min">> => integer_to_binary(DistMin),
+       <<"dist_max">> => integer_to_binary(DistMax)
+     }
   }.
